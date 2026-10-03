@@ -1,0 +1,14 @@
+{
+	"app.title": "Tamil Typing",
+	"nav.type": "Type",
+	"nav.visualiser": "Visualiser",
+	"app.subtitle": "Practice Tamil99 typing",
+	"app.typing.placeholder.hint": "Start typing here",
+	"nav.modeToggle": "Toggle Theme",
+	"nav.languageToggle": "தமிழ்",
+	"keyboard.layoutToggle": "Show Latin Layout",
+	"theme.toggle": "Toggle theme",
+	"theme.light": "Light",
+	"theme.dark": "Dark",
+	"theme.system": "System"
+}

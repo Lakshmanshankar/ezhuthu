@@ -1,0 +1,14 @@
+{
+	"app.title": "தமிழ் தட்டச்சு",
+	"nav.type": "தட்டச்சு",
+	"nav.visualiser": "பார்வை",
+	"app.subtitle": "தமிழ்99 தட்டச்சு பயிற்சி",
+	"app.typing.placeholder.hint": "தட்டச்சு தொடங்கவும்",
+	"nav.modeToggle": "நிறம் மாற்று",
+	"nav.languageToggle": "English",
+	"keyboard.layoutToggle": "ஆங்கில விசைப்பலகை",
+	"theme.toggle": "நிறம் மாற்று",
+	"theme.light": "பகல்",
+	"theme.dark": "இரவு",
+	"theme.system": "கணினி"
+}
