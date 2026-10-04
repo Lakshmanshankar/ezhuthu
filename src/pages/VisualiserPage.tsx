@@ -17,7 +17,6 @@ export function VisualiserPage() {
 	const [engineState, setEngineState] = useState<EngineState>({
 		pending: null,
 	});
-	const { keyboardView, setKeyboardView } = useSettingsStore();
 
 	const dynamicTamilLayout = useMemo(() => {
 		const preview = previewFor(engineState);
@@ -36,6 +35,7 @@ export function VisualiserPage() {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.ctrlKey || e.metaKey || e.altKey) return;
 
+			console.log(e.key, e);
 			setActiveKeys((prev) => {
 				const next = new Set(prev);
 				next.add(e.code);
@@ -62,44 +62,25 @@ export function VisualiserPage() {
 			}
 
 			if (e.key.length === 1) {
-				let charToType = e.key;
-
-				if (keyboardView === "tamil") {
-					const r = step(engineState, e.code);
-					if (r) {
-						e.preventDefault();
-						setTypedText((prev) => prev + r.ins);
-						setEngineState({ pending: r.pending });
-						return;
-					} else {
-						const fallback = getFallbackTamilChar(e.code, e.shiftKey);
-						if (fallback) {
-							e.preventDefault();
-							setTypedText((prev) => prev + fallback);
-							setEngineState({ pending: null });
-							return;
-						}
-					}
-				}
-
-				if (isTamilChar(charToType) && keyboardView !== "tamil") {
-					setKeyboardView("tamil");
-				} else if (!isTamilChar(charToType)) {
+				const r = step(engineState, e.code);
+				if (r) {
+					e.preventDefault();
+					setTypedText((prev) => prev + r.ins);
+					setEngineState({ pending: r.pending });
+					return;
+				} else {
 					const fallback = getFallbackTamilChar(e.code, e.shiftKey);
 					if (fallback) {
-						charToType = fallback;
-						if (keyboardView !== "tamil") {
-							setKeyboardView("tamil");
-						}
-					} else {
-						if (/[a-zA-Z]/.test(e.key) && keyboardView !== "latin") {
-							setKeyboardView("latin");
-						}
+						e.preventDefault();
+						setTypedText((prev) => prev + fallback);
+						setEngineState({ pending: null });
+						return;
 					}
 				}
 
+				// If no Tamil fallback exists for the key (e.g. symbols), output normally
 				e.preventDefault();
-				setTypedText((prev) => prev + charToType);
+				setTypedText((prev) => prev + e.key);
 				setEngineState({ pending: null });
 			}
 		};
@@ -118,7 +99,7 @@ export function VisualiserPage() {
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [engineState, keyboardView, setKeyboardView]);
+	}, [engineState]);
 
 	return (
 		<div className="flex flex-col items-center min-h-screen bg-background">
@@ -133,7 +114,7 @@ export function VisualiserPage() {
 				</div>
 
 				<Keyboard
-					layout={keyboardView === "tamil" ? dynamicTamilLayout : defaultLayout}
+					layout={dynamicTamilLayout}
 					activeKeys={activeKeys}
 				/>
 			</div>

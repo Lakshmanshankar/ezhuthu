@@ -13,8 +13,7 @@ import {
 } from "./ui/select";
 
 export function Navbar() {
-	const { language, setLanguage, keyboardView, toggleKeyboardView } =
-		useSettingsStore();
+	const { language, setLanguage } = useSettingsStore();
 
 	return (
 		<header className="w-full flex justify-center py-4">
@@ -42,13 +41,8 @@ export function Navbar() {
 				</div>
 
 				<div className="flex items-center gap-3">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={toggleKeyboardView}
-						className="h-9"
-					>
-						{keyboardView === "tamil" ? "QWERTY" : "Tamil - 99 Layout"}
+					<Button variant="ghost" size="sm" className="h-9 pointer-events-none">
+						Tamil 99 Layout
 					</Button>
 
 					<Select
