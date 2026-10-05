@@ -3,11 +3,6 @@ import { FormattedMessage } from "react-intl";
 import { Navbar } from "@/components/Navbar";
 import { type State as EngineState, step } from "@/lib/engine";
 import { getFallbackTamilChar } from "@/lib/tamil99";
-import { useSettingsStore } from "@/store/settings";
-
-const isTamilChar = (char: string) => {
-	return /[\u0B80-\u0BFF]/.test(char);
-};
 
 export function TypingPage() {
 	const [typedText, setTypedText] = useState("");
@@ -39,7 +34,7 @@ export function TypingPage() {
 			}
 
 			if (e.key.length === 1) {
-				const r = step(engineState, e.code);
+				const r = step(engineState, e.code, e.shiftKey);
 				if (r) {
 					e.preventDefault();
 					setTypedText((prev) => prev + r.ins);

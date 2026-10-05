@@ -117,7 +117,9 @@ export function Keyboard({
 										: isTarget
 											? "bg-accent border-accent-foreground/10 text-primary-foreground animate-pulse"
 											: "bg-background text-foreground border-border",
-									key.label.length > 1 && "text-xs px-2 text-muted-foreground",
+									key.label.length > 1 &&
+										!/[\u0B80-\u0BFF]/.test(key.label) &&
+										"text-xs px-2 text-muted-foreground",
 									key.noop && "opacity-40",
 								)}
 								style={{

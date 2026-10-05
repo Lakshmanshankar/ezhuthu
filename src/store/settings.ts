@@ -1,7 +1,6 @@
 import { create } from "zustand";
 
 type AppLanguage = "en" | "ta";
-type KeyboardView = "tamil" | "latin"; // bramhic
 
 interface SettingsState {
 	language: AppLanguage;

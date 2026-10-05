@@ -5,60 +5,60 @@ import type { KeyboardLayout } from "@/components/keyboard/Keyboard";
 export const tamil99Layout: KeyboardLayout = [
 	[
 		{ id: "Backquote", label: "`", subLabel: "~" },
-		{ id: "Digit1", label: "1", subLabel: "௧" },
-		{ id: "Digit2", label: "2", subLabel: "௨" },
-		{ id: "Digit3", label: "3", subLabel: "௩" },
-		{ id: "Digit4", label: "4", subLabel: "௪" },
-		{ id: "Digit5", label: "5", subLabel: "௫" },
-		{ id: "Digit6", label: "6", subLabel: "௬" },
-		{ id: "Digit7", label: "7", subLabel: "௭" },
-		{ id: "Digit8", label: "8", subLabel: "௮" },
-		{ id: "Digit9", label: "9", subLabel: "௯" },
-		{ id: "Digit0", label: "0", subLabel: "௰" },
-		{ id: "Minus", label: "-", subLabel: "௱" },
-		{ id: "Equal", label: "=", subLabel: "௲" },
+		{ id: "Digit1", label: "1", subLabel: "!" },
+		{ id: "Digit2", label: "2", subLabel: "@" },
+		{ id: "Digit3", label: "3", subLabel: "#" },
+		{ id: "Digit4", label: "4", subLabel: "$" },
+		{ id: "Digit5", label: "5", subLabel: "%" },
+		{ id: "Digit6", label: "6", subLabel: "^" },
+		{ id: "Digit7", label: "7", subLabel: "&" },
+		{ id: "Digit8", label: "8", subLabel: "*" },
+		{ id: "Digit9", label: "9", subLabel: "(" },
+		{ id: "Digit0", label: "0", subLabel: ")" },
+		{ id: "Minus", label: "-", subLabel: "_" },
+		{ id: "Equal", label: "=", subLabel: "+" },
 		{ id: "Backspace", label: "Backspace", width: 2 },
 	],
 	[
 		{ id: "Tab", label: "Tab", width: 1.5 },
-		{ id: "KeyQ", label: "ஆ", subLabel: "Q" },
-		{ id: "KeyW", label: "ஈ", subLabel: "W" },
-		{ id: "KeyE", label: "ஊ", subLabel: "E" },
-		{ id: "KeyR", label: "ஐ", subLabel: "R" },
-		{ id: "KeyT", label: "ஏ", subLabel: "T" },
-		{ id: "KeyY", label: "ள", subLabel: "Y" },
-		{ id: "KeyU", label: "ற", subLabel: "U" },
-		{ id: "KeyI", label: "ன", subLabel: "I" },
-		{ id: "KeyO", label: "ட", subLabel: "O" },
-		{ id: "KeyP", label: "ண", subLabel: "P" },
+		{ id: "KeyQ", label: "ஆ", subLabel: "ஸ" },
+		{ id: "KeyW", label: "ஈ", subLabel: "ஷ" },
+		{ id: "KeyE", label: "ஊ", subLabel: "ஜ" },
+		{ id: "KeyR", label: "ஐ", subLabel: "ஹ" },
+		{ id: "KeyT", label: "ஏ", subLabel: "க்ஷ" },
+		{ id: "KeyY", label: "ள", subLabel: "ஸ்ரீ" },
+		{ id: "KeyU", label: "ற", subLabel: "" },
+		{ id: "KeyI", label: "ன", subLabel: "" },
+		{ id: "KeyO", label: "ட", subLabel: "[" },
+		{ id: "KeyP", label: "ண", subLabel: "]" },
 		{ id: "BracketLeft", label: "ச", subLabel: "{" },
 		{ id: "BracketRight", label: "ஞ", subLabel: "}" },
 		{ id: "Backslash", label: "\\", subLabel: "|", width: 1.5 },
 	],
 	[
 		{ id: "CapsLock", label: "Caps", width: 1.75 },
-		{ id: "KeyA", label: "அ", subLabel: "A" },
-		{ id: "KeyS", label: "இ", subLabel: "S" },
-		{ id: "KeyD", label: "உ", subLabel: "D" },
-		{ id: "KeyF", label: "்", subLabel: "F" },
-		{ id: "KeyG", label: "எ", subLabel: "G" },
-		{ id: "KeyH", label: "க", subLabel: "H" },
-		{ id: "KeyJ", label: "ப", subLabel: "J" },
-		{ id: "KeyK", label: "ம", subLabel: "K" },
-		{ id: "KeyL", label: "த", subLabel: "L" },
-		{ id: "Semicolon", label: "ந", subLabel: "ன" },
-		{ id: "Quote", label: "ய", subLabel: '"' },
+		{ id: "KeyA", label: "அ", subLabel: "௹" },
+		{ id: "KeyS", label: "இ", subLabel: "௺" },
+		{ id: "KeyD", label: "உ", subLabel: "௸" },
+		{ id: "KeyF", label: "்", subLabel: "ஃ" },
+		{ id: "KeyG", label: "எ", subLabel: "" },
+		{ id: "KeyH", label: "க", subLabel: "" },
+		{ id: "KeyJ", label: "ப", subLabel: "" },
+		{ id: "KeyK", label: "ம", subLabel: '"' },
+		{ id: "KeyL", label: "த", subLabel: ":" },
+		{ id: "Semicolon", label: "ந", subLabel: ";" },
+		{ id: "Quote", label: "ய", subLabel: "'" },
 		{ id: "Enter", label: "Enter", width: 2.25 },
 	],
 	[
 		{ id: "ShiftLeft", label: "Shift", width: 2.25 },
-		{ id: "KeyZ", label: "ஔ", subLabel: "Z" },
-		{ id: "KeyX", label: "ஓ", subLabel: "X" },
-		{ id: "KeyC", label: "ஒ", subLabel: "C" },
-		{ id: "KeyV", label: "வ", subLabel: "V" },
-		{ id: "KeyB", label: "ங", subLabel: "B" },
-		{ id: "KeyN", label: "ல", subLabel: "N" },
-		{ id: "KeyM", label: "ர", subLabel: "M" },
+		{ id: "KeyZ", label: "ஔ", subLabel: "௳" },
+		{ id: "KeyX", label: "ஓ", subLabel: "௴" },
+		{ id: "KeyC", label: "ஒ", subLabel: "௵" },
+		{ id: "KeyV", label: "வ", subLabel: "௶" },
+		{ id: "KeyB", label: "ங", subLabel: "௷" },
+		{ id: "KeyN", label: "ல", subLabel: "" },
+		{ id: "KeyM", label: "ர", subLabel: "/" },
 		{ id: "Comma", label: ",", subLabel: "<" },
 		{ id: "Period", label: ".", subLabel: ">" },
 		{ id: "Slash", label: "ழ", subLabel: "?" },
@@ -73,6 +73,7 @@ export const tamil99Layout: KeyboardLayout = [
 		{ id: "MetaRight", label: "Win", width: 1.25 },
 		{ id: "ContextMenu", label: "Menu", width: 1.25 },
 		{ id: "ControlRight", label: "Ctrl", width: 1.5 },
+		{ id: "Backquote", label: "`", subLabel: "~" },
 	],
 ];
 
@@ -83,7 +84,7 @@ export function getFallbackTamilChar(
 	for (const row of tamil99Layout) {
 		for (const key of row) {
 			if (key.id === code) {
-				if (shiftKey && key.subLabel && key.subLabel.length === 1) {
+				if (shiftKey && key.subLabel) {
 					return key.subLabel;
 				}
 				if (key.label.length === 1) {
@@ -145,4 +146,15 @@ export const VOWEL_SIGNS: Record<string, string> = {
 	KeyC: "ொ",
 	KeyX: "ோ",
 	KeyZ: "ௌ",
+} as const;
+
+export const SHRI_CHAR = "ஸ்ரீ";
+
+export const GRANTHA_CONSONANTS: Record<string, string> = {
+	KeyQ: "ஸ",
+	KeyW: "ஷ",
+	KeyE: "ஜ",
+	KeyR: "ஹ",
+	KeyT: "க்ஷ",
+	KeyY: SHRI_CHAR, // Special case: No, consonant + vowel sign
 } as const;

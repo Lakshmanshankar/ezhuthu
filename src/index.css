@@ -22,7 +22,9 @@
 
 @theme inline {
 	--font-heading: var(--font-sans);
-	--font-sans: "Noto Sans Tamil", "Latha", "Mukta Malar", "Arial Unicode MS", "Vijaya", "InaiMathi", "Tamil MN", sans-serif;
+	--font-sans:
+		"Noto Sans Tamil", "Latha", "Mukta Malar", "Arial Unicode MS", "Vijaya",
+		"InaiMathi", "Tamil MN", sans-serif;
 	--font-tamil:
 		"Noto Sans Tamil", "Latha", "Mukta Malar", "Arial Unicode MS", "Vijaya",
 		"InaiMathi", "Tamil MN", sans-serif;

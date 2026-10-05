@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { FormattedMessage } from "react-intl";
-import { defaultLayout, Keyboard } from "@/components/keyboard/Keyboard";
+import { Keyboard } from "@/components/keyboard/Keyboard";
 import { Navbar } from "@/components/Navbar";
 import { type State as EngineState, step } from "@/lib/engine";
 import { previewFor } from "@/lib/preview";
 import { getFallbackTamilChar, tamil99Layout } from "@/lib/tamil99";
-import { useSettingsStore } from "@/store/settings";
-
-const isTamilChar = (char: string) => {
-	return /[\u0B80-\u0BFF]/.test(char);
-};
 
 export function VisualiserPage() {
 	const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
@@ -18,24 +13,34 @@ export function VisualiserPage() {
 		pending: null,
 	});
 
+	const isShiftActive =
+		activeKeys.has("ShiftLeft") || activeKeys.has("ShiftRight");
 	const dynamicTamilLayout = useMemo(() => {
 		const preview = previewFor(engineState);
 		return tamil99Layout.map((row) =>
 			row.map((key) => {
 				const p = preview[key.id];
-				if (p) {
-					return { ...key, label: p.cap, noop: p.noop };
-				}
-				return key;
+				const unshiftedCap = p ? p.cap : key.label;
+
+				const mainCap = isShiftActive
+					? key.subLabel || key.label
+					: unshiftedCap;
+				const subCap = isShiftActive ? unshiftedCap : key.subLabel;
+
+				return {
+					...key,
+					label: mainCap,
+					subLabel: subCap,
+					noop: isShiftActive ? false : p?.noop,
+				};
 			}),
 		);
-	}, [engineState]);
+	}, [engineState, isShiftActive]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-			console.log(e.key, e);
 			setActiveKeys((prev) => {
 				const next = new Set(prev);
 				next.add(e.code);
@@ -62,7 +67,7 @@ export function VisualiserPage() {
 			}
 
 			if (e.key.length === 1) {
-				const r = step(engineState, e.code);
+				const r = step(engineState, e.code, e.shiftKey);
 				if (r) {
 					e.preventDefault();
 					setTypedText((prev) => prev + r.ins);
@@ -112,11 +117,7 @@ export function VisualiserPage() {
 						</span>
 					)}
 				</div>
-
-				<Keyboard
-					layout={dynamicTamilLayout}
-					activeKeys={activeKeys}
-				/>
+				<Keyboard layout={dynamicTamilLayout} activeKeys={activeKeys} />
 			</div>
 		</div>
 	);
