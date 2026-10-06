@@ -1,0 +1,456 @@
+% Compile with XeLaTeX (needed for Tamil text), run twice:
+%   xelatex report.tex
+% Requires the "Korkai" font (https://tamilfontstudio.net/fonts/korkai)
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows.meta}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\newfontfamily\tamilfont[Script=Tamil]{Korkai}
+\newcommand{\tam}[1]{{\tamilfont #1}}
+
+\lstset{
+  language=JavaScript,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  numbers=left, numberstyle=\tiny\color{gray},
+  frame=single, rulecolor=\color{black!20},
+  breaklines=true, showstringspaces=false, columns=fullflexible,
+  xleftmargin=1.5em
+}
+
+\newcommand{\empt}{\varepsilon}
+\newcommand{\cset}{\mathcal{C}}
+\newcommand{\vset}{\mathcal{V}}
+\newcommand{\sset}{S}
+
+\title{\textbf{Ezhuthu: A Stateful Tamil99 Keyboard Visualiser}\\[0.3em]
+\large Modelling Tamil99 Keyboard layout as a finite-state transducer}
+\author{Lakshmanshankar \\ \texttt{lakshmanshankar.c@gmail.com} \\
+\texttt{https://github.com/lakshmanshankar/ezhuthu}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\textbf{Tamil99 is a stateful keyboard layout:} the output produced by a key depends on the key sequence preceding it. For example, the vowel key for \tam{ஆ} produces the independent vowel \tam{ஆ} when no consonant is pending, but the corresponding vowel sign \tam{ா} when a consonant precedes it. Consequently, a static keyboard layout cannot fully describe its behavior.
+\\
+\\This report models Tamil99 as a small Mealy machine whose state consists solely of the pending consonant, or the absence of one. A single pure transition function, \texttt{step}, implements the machine's transition and output function: given an initial state and a key input, it produces both the emitted text and the resulting state. The same transition function governs both the preview handler and the input mechanism, ensuring that the visualized and actual behavior remain consistent.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Introduction}
+% =====================================================================
+Most layout viewers (including those built on XKB data) map each physical key
+to one character. That is enough for Latin layouts but not for Tamil99, where
+one key can produce different output depending on context.
+
+The goal is to show, at every moment, \emph{what each key would do if pressed
+next}. After the user types \tam{க}, the vowel keys are relabelled
+\tam{கா}, \tam{கி}, \tam{கீ}, \ldots{} instead of \tam{ஆ}, \tam{இ}, \tam{ஈ},
+\ldots{}
+
+\paragraph{Components}
+\begin{itemize}
+  \item A formal model of Tamil99 as a finite-state transducer with 24 states.
+  \item A pure, UI-independent \texttt{step} function.
+  \item A preview table generated from \texttt{step}, so display and typing
+        always agree.
+\end{itemize}
+
+% =====================================================================
+\section{Background}
+% =====================================================================
+Tamil is an abugida. A consonant carries an inherent vowel \tam{அ}; other
+vowels are written with dependent signs, and the pulli (U+0BCD) suppresses the
+inherent vowel. A syllable is therefore often several code points:
+\[
+  \text{\tam{கொ}} = \text{U+0B95} + \text{U+0BCA}, \qquad
+  \text{\tam{க்}} = \text{U+0B95} + \text{U+0BCD}.
+\]
+Text should therefore be handled by grapheme cluster, not by code point. Note,
+however, that the default Unicode cluster rules do not treat Tamil conjuncts
+such as \tam{க்ஷ} and \tam{ஸ்ரீ} as one unit (see the Testing section), so the
+engine tracks these itself.
+
+Tamil99 gives each vowel \emph{one} key, which must act as an independent vowel
+at the start of a syllable and as a vowel sign after a consonant. This depends
+on the previous key, so the layout cannot be a static map.
+
+% =====================================================================
+\section{Formal Model}
+% =====================================================================
+We model Tamil99 as a Mealy machine $M=(Q,\Sigma,\Gamma^{*},\delta,\lambda,q_0)$.
+
+\subsection{Alphabets}
+\begin{itemize}
+  \item $\cset$: the 23 consonants that take vowel signs: 18 on the base
+        layer plus 5 Grantha letters on the Shift layer
+        (\tam{ஜ}, \tam{ஷ}, \tam{ஸ}, \tam{ஹ}, \tam{க்ஷ}).
+        Note that \tam{க்ஷ} consists of three code points but behaves
+        as a single consonant.
+
+  \item $\vset$: the 12 independent vowels.
+
+  \item $\sset$: the special character \tam{ஸ்ரீ}, which is emitted
+        directly and has no corresponding vowel-sign form.
+
+  \item $\Sigma$: input keys, identified by
+        $(\texttt{KeyboardEvent.code},\text{shift})$:
+        \[
+        \Sigma =
+        K_{\cset}\cup K_{\vset}\cup K_{\sset}\cup
+        \{k_{\text{pulli}}\}.
+        \]
+
+  \item $\Gamma$: Unicode code points; outputs are strings in
+        $\Gamma^{*}$.
+\end{itemize}
+
+The layout data supplies
+$\kappa:K_{\cset}\to\cset$,
+$\nu:K_{\vset}\to\vset$,
+and $\rho:K_{\sset}\to\sset$,
+together with the vowel-sign table
+$\sigma:\vset\to\Gamma^{*}$.
+
+
+\subsection{States}
+The only information that affects future output is the \emph{pending bare
+consonant}: the consonant just typed that has not yet received a vowel sign or
+pulli.
+\[
+  Q=\{\empt\}\cup\cset,\qquad q_0=\empt,\qquad |Q|=24.
+\]
+$\empt$ means ``nothing pending'' (start of text, after a vowel, a vowel sign, a
+pulli, \tam{ஸ்ரீ}, or a space). The state does not need the whole prefix:
+\tam{ககா} and \tam{கி} both lead to $\empt$.
+
+\subsection{Transition and output}
+The pure function \texttt{step} takes the current state $q$ and an input key
+$k$, and returns the emitted token together with the next pending state:
+\[
+  \texttt{step}(q,k)
+  =
+  \{\texttt{ins}=\lambda(q,k),\;
+    \texttt{pending}=\delta(q,k)\}.
+\]
+The function performs only the state transition and token emission. It does
+not combine a vowel sign with a pending consonant. The preview function uses
+the emitted token and the pending state to determine the resulting vowel-sign
+combination when displaying the key's effect. The same \texttt{step} function
+is used by both the preview and input paths, keeping their state transitions
+consistent.
+
+\begin{align}
+  \lambda(q,k) &=
+  \begin{cases}
+    \kappa(k) & k\in K_{\cset}\\
+    \nu(k) & k\in K_{\vset},\ q=\empt\\
+    \sigma(\nu(k)) & k\in K_{\vset},\ q\in\cset\\
+    \text{\tam{்}} & k=k_{\text{pulli}},\ q\in\cset\\
+    \empt & k=k_{\text{pulli}},\ q=\empt
+  \end{cases}
+\end{align}
+
+and the state-transition function is
+
+\begin{align}
+  \delta(q,k) &=
+  \begin{cases}
+    \kappa(k) & k\in K_{\cset}\\
+    \empt & \text{otherwise.}
+  \end{cases}
+\end{align}
+Figure~\ref{fig:mealy} shows the machine. The 24 states fall into two classes:
+$\empt$, and the 23 consonant states, drawn as one node $c$ because they all
+behave identically. Edges are labelled \emph{input / output}.
+\\
+\\
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[->,>=Stealth,node distance=6.5cm,auto,semithick,
+  every state/.style={minimum size=1.1cm}]
+  \node[state,initial] (e) {$\empt$};
+  \node[state] (c) [right of=e] {$c$};
+
+  \path (e) edge[loop above] node[align=center,font=\small]
+          {vowel $/\ \nu(k)$\\  pulli $/\  $\tam{ஶ்ரீ} $/\  \empt$} (e)
+        (e) edge[bend left] node[font=\small]
+          {consonant $/\ \kappa(k)$} (c)
+        (c) edge[bend left] node[align=center,font=\small]
+          {vowel $/\ \sigma(\nu(k))$\\ pulli  $/\ $\tam{ஶ்ரீ} $/\ $\tam{்}} (e)
+        (c) edge[loop above] node[font=\small]
+          {consonant $/\ \kappa(k)$} (c);
+\end{tikzpicture}
+\label{fig:mealy}
+\end{figure}
+
+\newpage
+% =====================================================================
+\section{Layout Data}
+% =====================================================================
+All layout knowledge lives in one data module, separate from the algorithm.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll@{\qquad}ll@{\qquad}ll}
+\toprule
+Key & Cons. & Key & Cons. & Key & Cons.\\
+\midrule
+\texttt{H} & \tam{க} & \texttt{B} & \tam{ங} & \texttt{[} & \tam{ச}\\
+\texttt{]} & \tam{ஞ} & \texttt{O} & \tam{ட} & \texttt{P} & \tam{ண}\\
+\texttt{L} & \tam{த} & \texttt{;} & \tam{ந} & \texttt{J} & \tam{ப}\\
+\texttt{K} & \tam{ம} & \texttt{'} & \tam{ய} & \texttt{M} & \tam{ர}\\
+\texttt{N} & \tam{ல} & \texttt{V} & \tam{வ} & \texttt{/} & \tam{ழ}\\
+\texttt{Y} & \tam{ள} & \texttt{U} & \tam{ற} & \texttt{I} & \tam{ன}\\
+\bottomrule
+\end{tabular}
+\caption{Base-layer consonant keys (18). The five grantha consonants are
+Shift-layer keys. \tam{ஸ்ரீ} is a Shift-layer special entry.}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llllc}
+\toprule
+Key & Vowel & Shown on \tam{க} & Sign\\
+\midrule
+\texttt{A} & \tam{அ} & \tam{க} & (none)\\
+\texttt{Q} & \tam{ஆ} & \tam{கா} & U+0BBE\\
+\texttt{S} & \tam{இ} & \tam{கி} & U+0BBF\\
+\texttt{W} & \tam{ஈ} & \tam{கீ} & U+0BC0\\
+\texttt{D} & \tam{உ} & \tam{கு} & U+0BC1\\
+\texttt{E} & \tam{ஊ} & \tam{கூ} & U+0BC2\\
+\texttt{G} & \tam{எ} & \tam{கெ} & U+0BC6\\
+\texttt{T} & \tam{ஏ} & \tam{கே} & U+0BC7\\
+\texttt{R} & \tam{ஐ} & \tam{கை} & U+0BC8\\
+\texttt{C} & \tam{ஒ} & \tam{கொ} & U+0BCA\\
+\texttt{X} & \tam{ஓ} & \tam{கோ} & U+0BCB\\
+\texttt{Z} & \tam{ஔ} & \tam{கௌ} & U+0BCC\\
+\bottomrule
+\end{tabular}
+\caption{Vowel keys $\nu$ and signs $\sigma$. The pulli key is \texttt{F}
+(U+0BCD).}
+\end{table}
+
+Because data and algorithm are separate, correcting the layout means editing
+these tables only.
+
+% =====================================================================
+\section{The \texttt{step} Function}
+% =====================================================================
+\texttt{step} is pure: no global state, no DOM, no React. It returns
+\texttt{null} for keys outside the layout.
+
+\begin{lstlisting}
+export function step(
+	state: State,
+	code: string,
+	shiftKey: boolean = false,
+): { ins: string; pending: string | null } | null {
+	if (shiftKey) {
+		if (code in T.GRANTHA_CONSONANTS) {
+			const char = T.GRANTHA_CONSONANTS[code];
+			if (char === T.SHRI_CHAR) {
+				// special case: No vowel sign for "ஸ்ரீ"
+				return { ins: char, pending: null };
+			}
+			return { ins: char, pending: char };
+		}
+		return null;
+	}
+
+	const isConsonant = code in T.CONSONANTS;
+	const isVowel = code in T.VOWELS;
+	const isPulli = code === T.PULLI_KEY;
+
+	if (isConsonant) {
+		const char = T.CONSONANTS[code];
+		return { ins: char, pending: char };
+	}
+
+	if (isVowel) {
+		if (state.pending !== null) {
+			if (code === "KeyA") {
+				return { ins: "", pending: null };
+			}
+			return { ins: T.VOWEL_SIGNS[code], pending: null };
+		} else {
+			return { ins: T.VOWELS[code], pending: null };
+		}
+	}
+
+	if (isPulli) {
+		if (state.pending !== null) {
+			return { ins: T.PULLI_CHAR, pending: null };
+		} else {
+			return { ins: T.PULLI_CHAR, pending: null };
+		}
+	}
+
+	return null;
+}
+\end{lstlisting}
+\label{tab:example_traces}
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+Keys & Output & Final state & Comment\\
+\midrule
+\texttt{H} & \tam{க} & \tam{க} & consonant pending\\
+\texttt{H Q} & \tam{கா} & $\empt$ & vowel sign appended\\
+\texttt{H A} & \tam{க} & $\empt$ & inherent vowel, nothing appended\\
+\texttt{H H} & \tam{கக} & \tam{க} & no automatic pulli\\
+\texttt{H F} & \tam{க்} & $\empt$ & explicit pulli\\
+\texttt{Q} & \tam{ஆ} & $\empt$ & independent vowel at start\\
+Shift grantha, \texttt{S} & \tam{ஜி} & $\empt$ & grantha takes signs\\
+Shift \tam{ஸ்ரீ}, \texttt{Q} & \tam{ஸ்ரீஆ} & $\empt$ & no sign after \tam{ஸ்ரீ}\\
+\bottomrule
+\end{tabular}
+\caption{Example traces. \texttt{H} and \texttt{H A} show the same text but
+leave different states, so state cannot be recovered from the text.}
+\end{table}
+
+A \texttt{step} call is $O(1)$ in time and space, and no typing history is
+needed.
+
+% =====================================================================
+\section{Visualiser Design}
+% =====================================================================
+\subsection{Preview table}
+For each state $q$ the visualiser needs the label of every key. The full table
+is built once at load by applying \texttt{step} to every pair $(q,k)$:
+\[
+  \text{cap}(q,k)=q\cdot\lambda(q,k).
+\]
+This gives $|Q|\cdot|\Sigma|=24\times37=888$ entries, each holding the inserted
+text, the keycap label, a no-op flag, and the key kind.
+
+\begin{lstlisting}
+// @preview.ts
+for (const pending of PENDING_STATES) {
+	const row: Record<string, KeyPreview> = {};
+	for (const code of ALL_CODES) {
+		const r = step({ pending }, code, false);
+		if (r) {
+			let cap = r.ins;
+			const isVowelSign =
+				code in T.VOWELS &&
+				pending !== null &&
+				r.ins !== "" &&
+				r.ins !== T.VOWELS[code];
+			const isPulli = code === T.PULLI_KEY && pending !== null;
+
+			if (pending) {
+				if (isVowelSign) {
+					if (pending === T.SHRI_CHAR) {
+						// special case: No vowel sign for "ஸ்ரீ"
+						cap = T.VOWELS[code];
+					} else {
+						cap = pending + r.ins;
+					}
+				} else if (code in T.VOWELS && r.ins === "") {
+					cap = pending;
+				} else if (code in T.CONSONANTS) {
+					cap = T.CONSONANTS[code];
+				} else if (isPulli) {
+					cap = pending + r.ins;
+				}
+			}
+			row[code] = {
+				ins: r.ins,
+				cap,
+				noop: pending !== null && r.ins === "",
+			};
+		}
+	}
+	TABLE.set(pending, row);
+}
+\end{lstlisting}
+
+\paragraph{Single source of truth.}
+The table comes from the same \texttt{step} the typing engine uses, so keycaps
+cannot show behaviour that differs from what happens. A unit test checks every
+$(q,k)$ pair.
+
+\subsection{Architecture}
+\begin{itemize}
+  \item \textbf{Engine} (\texttt{tamil99.ts}, \texttt{engine.ts},
+        \texttt{preview.ts}): pure TypeScript, easy to unit-test.
+  \item \textbf{Input}: one \texttt{keydown} listener reading
+        \texttt{event.code} and the shift flag, never the OS-translated
+        character, so it works with any active OS layout.
+        The values are inferred from key.Id(KeyF), so even the latin character \texttt{F} is mapped to the Tamil-99 layout.
+  \item \textbf{Keyboard component}: renders from \texttt{previewFor(state)} and
+        highlights held keys.
+\end{itemize}
+
+\subsection{Rendering Tamil text}
+Each Tamil label must be shaped as one run by one font. Each keycap therefore
+uses a single \texttt{span}, Noto Sans Tamil listed first, no non-zero
+\texttt{letter-spacing}, and \texttt{lang="ta"} on the container.
+
+% =====================================================================
+\section{Testing}
+% =====================================================================
+\begin{itemize}
+  \item \textbf{Traces}: the rows of the trace table as assertions.
+  \item \textbf{Consistency}: for all $(q,k)$, the preview entry equals
+        \texttt{step}'s output.
+  \item \textbf{Totality}: every key in $\Sigma$ returns non-null in every
+        state; keys outside $\Sigma$ return \texttt{null}.
+  \item \textbf{Encoding}: output contains only Tamil-block code points 
+        (U+0B80--U+0BFF), with no zero-width characters. For example, 
+        typing \tam{க்} + \tam{ஷ} produces the single grapheme 
+        \tam{க்ஷ}, without inserting a zero-width character between the 
+        components. In contrast, some other Tamil keyboard implementations 
+        may produce sequences such as \tam{க்‌ஷ} with an additional 
+        zero-width character (e.g.\ U+200C/U+200D) in the encoded text.
+  \item \textbf{Graphemes}: \texttt{Intl.Segmenter} keeps \tam{கொ} as one
+        cluster, but splits the grantha units into two: \tam{க்ஷ} becomes
+        \tam{க்}\,|\,\tam{ஷ} and \tam{ஸ்ரீ} becomes \tam{ஸ்}\,|\,\tam{ரீ}. The
+        default Unicode rules only join virama conjuncts for some Indic scripts,
+        not Tamil. Tests assert this behaviour so that nothing downstream
+        relies on the segmenter to find these units; the engine tracks them
+        explicitly.
+\end{itemize}
+
+% =====================================================================
+\section{Limitations and Future Work}
+% =====================================================================
+\begin{itemize}
+  \item \textbf{Other layouts}: InScript (static) could be
+        supported by another transducer behind the same
+        \texttt{step}/\texttt{previewFor} interface.
+  \item \textbf{Layout detection}: browsers do not expose the OS layout, so it
+        must be inferred and user-overridable.
+  \item \textbf{Error heat-map}: per-key error counts could be drawn on the
+        keyboard in a typing-test extension.
+\end{itemize}
+
+% =====================================================================
+\section{Conclusion}
+% =====================================================================
+Tamil99 is modelled exactly by a 24-state Mealy machine whose only memory is
+the pending consonant. A single pure \texttt{step} function drives both typing
+and the keycap labels, making the display correct by construction. The state
+space is small enough to pre-compute fully, and the data-driven design allows
+the layout to be corrected or replaced without touching the algorithm.
+
+\end{document}
