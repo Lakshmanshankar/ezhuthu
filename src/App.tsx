@@ -4,7 +4,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import enMessages from "./locales/en.json";
 import taMessages from "./locales/ta.json";
 
-import { TypingPage } from "./pages/TypingPage";
 import { VisualiserPage } from "./pages/VisualiserPage";
 import { useSettingsStore } from "./store/settings";
 
@@ -21,8 +20,7 @@ function App() {
 		<IntlProvider locale={language} messages={messages[language]}>
 			<BrowserRouter>
 				<Routes>
-					<Route path="/" element={<TypingPage />} />
-					<Route path="/visualiser" element={<VisualiserPage />} />
+					<Route path="/" element={<VisualiserPage />} />
 				</Routes>
 			</BrowserRouter>
 		</IntlProvider>

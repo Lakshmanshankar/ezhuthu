@@ -29,12 +29,6 @@ export function Navbar() {
 							to="/"
 							className="text-muted-foreground hover:text-foreground transition-colors"
 						>
-							<FormattedMessage id="nav.type" />
-						</Link>
-						<Link
-							to="/visualiser"
-							className="text-muted-foreground hover:text-foreground transition-colors"
-						>
 							<FormattedMessage id="nav.visualiser" />
 						</Link>
 					</nav>
